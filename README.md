@@ -40,7 +40,6 @@ Evaluated on a diverse corpus of 50 technical documents across Law, Finance, Med
 | Baseline (Semantic Only) |	0.5656 |
 | Structure-Aware (Ours) |	0.7574 |
 | Improvement |	+0.1918 |
-(Note: The scores above are placeholders based on initial experiments. Please update them with your actual run_eval.py output.)
 
 ### 📂 Dataset
 The benchmark dataset constructed for this research is available in data/benchmark_50.json. It contains 50 structured documents with ground-truth section labels.
