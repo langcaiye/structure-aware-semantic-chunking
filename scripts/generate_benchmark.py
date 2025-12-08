@@ -2,10 +2,11 @@ import wikipediaapi
 import re
 import json
 import os
+import random
 from tqdm import tqdm
 
-# 1. Configuration (使用字典结构来明确领域)
 OUTPUT_FILE = "../data/benchmark_50.json"
+# TOPICS_BY_DOMAIN
 TOPICS_BY_DOMAIN = {
     "Law & Finance": [
         "Contract law", "Tort", "Intellectual property", "Corporate law", "Bankruptcy",
@@ -32,22 +33,18 @@ TOPICS_BY_DOMAIN = {
 
 def build_dataset():
     wiki = wikipediaapi.Wikipedia(
-        user_agent='StructureAwareBenchmark/2.0 (opensource@example.com)',
+        user_agent='StructureAwareBenchmark/4.0 (fix_uppercase_trap)',
         language='en',
         extract_format=wikipediaapi.ExtractFormat.WIKI
     )
     
     data_records = []
-    total_articles = sum(len(v) for v in TOPICS_BY_DOMAIN.values())
-    print(f"Downloading {total_articles} articles across {len(TOPICS_BY_DOMAIN)} domains...")
+    print(f"Generating optimized benchmark with semantic traps...")
     
-    # 遍历字典
     for domain, topics in TOPICS_BY_DOMAIN.items():
-        print(f"Processing Domain: {domain}...")
-        for title in tqdm(topics):
+        for title in tqdm(topics, desc=domain):
             page = wiki.page(title)
-            if not page.exists():
-                continue
+            if not page.exists(): continue
                 
             text_raw = page.text
             paragraphs = [p for p in text_raw.split('\n') if len(p) > 60]
@@ -59,12 +56,24 @@ def build_dataset():
             doc_labels = [] 
             
             for i, para in enumerate(paragraphs):
-                # Inject Header
-                header = f"# Section {i+1}: Analysis of {title} part {i}"
+                style = i % 3 
+                
+                # 1. Header
+                if style == 0:
+                    # Type A: Markdown (Strong semantic trap)
+                    header = f"# Section {i+1}: Detailed Analysis of {title}"
+                elif style == 1:
+                    # Type B: Numbered List (Strong trap)
+                    header = f"{i+1}. {title} Implementation and Core Concepts"
+                else:
+                    # Type C: Uppercase (CRITICAL FIX)
+                    clean_title = title.split('(')[0].strip().upper() 
+                    header = f"PART {i+1}: {clean_title} SYSTEM ARCHITECTURE"
+                
                 doc_sentences.append(header)
                 doc_labels.append(i)
                 
-                # Split sentences
+                # 2. 构造正文
                 sents = re.split(r'(?<=[.!?]) +', para)
                 for s in sents:
                     if len(s.strip()) > 5:
@@ -73,7 +82,7 @@ def build_dataset():
             
             data_records.append({
                 "doc_id": title,
-                "domain": domain,  # <--- 新增：保存领域标签
+                "domain": domain,
                 "sentences": doc_sentences,
                 "gt_labels": doc_labels
             })
@@ -81,8 +90,8 @@ def build_dataset():
     os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         json.dump(data_records, f, indent=4, ensure_ascii=False)
-        
-    print(f"✅ Benchmark dataset saved to {OUTPUT_FILE} with {len(data_records)} documents.")
+    
+    print(f"✅ Diverse Benchmark saved to {OUTPUT_FILE}")
 
 if __name__ == "__main__":
     build_dataset()
